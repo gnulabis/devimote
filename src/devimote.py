@@ -26,11 +26,6 @@ class DeviMoteWidget(GridLayout):
     sw_power  = ObjectProperty(None)
     sw_mute   = ObjectProperty(None)
 
-    def populate_channels(self, ch_list):
-        '''Function to populate once the list of channels'''
-        for channel in ch_list:
-            self.channels.values.append(ch_list[channel])
-
     def set_volume(self, byte):
         '''Function to adjust the volume'''
         self.volume.set_byte(byte)
@@ -54,10 +49,25 @@ class DeviMoteWidget(GridLayout):
             self.sw_mute.state  = 'down' if status['muted'] else 'normal'
             self.volume.set_byte(status['volume'])
             if not self.channels.values:
-                self.populate_channels(status['ch_list'])
+                for channel in status['ch_list']:
+                    self.channels.values.append(status['ch_list'][channel])
             self.channels.text = status['ch_list'][status['channel']]
         else:
             self.stat_line.text  = 'Status: Not connected'
+
+def _crc16(data : bytearray):
+    '''Internal function to calculate a CRC-16/CCITT-FALSE from the given bytearray'''
+    if data is None :
+        return 0
+    crc = 0xFFFF
+    for i in enumerate(data):
+        crc ^= data[i[0]] << 8
+        for _ in range(8):
+            if (crc & 0x8000) > 0:
+                crc =(crc << 1) ^ 0x1021
+            else:
+                crc = crc << 1
+    return crc & 0xFFFF
 
 class DeviMoteBackEnd():
     '''Backend class handling all control and status monitoring'''
@@ -79,20 +89,6 @@ class DeviMoteBackEnd():
         self.status['crc_ok'] = False
         self.packet_cnt = 0
 
-    def crc16(self, data : bytearray):
-        '''Function to calculate a CRC-16/CCITT-FALSE from the given bytearray'''
-        if data is None :
-            return 0
-        crc = 0xFFFF
-        for i in enumerate(data):
-            crc ^= data[i[0]] << 8
-            for _ in range(8):
-                if (crc & 0x8000) > 0:
-                    crc =(crc << 1) ^ 0x1021
-                else:
-                    crc = crc << 1
-        return crc & 0xFFFF
-
     def _send_command(self, data: bytearray):
         '''Internal function that builds and transmits a UDP packet command to the amplifier'''
         if not (self.status['connected'] and self.status['ip']):
@@ -105,7 +101,7 @@ class DeviMoteBackEnd():
             data[3] = self.packet_cnt
             data[5] = self.packet_cnt >> 1
             self.packet_cnt += 1
-            crc = self.crc16(data[0:12])
+            crc = _crc16(data[0:12])
             data[12] = (crc & 0xff00) >> 8
             data[13] = (crc & 0x00ff)
             sock.sendto(data, (self.status['ip'], self.UDP_PORT_CMD))
@@ -188,7 +184,7 @@ class DeviMoteBackEnd():
         self.status['muted']   = (data[308] & 0x2) != 0
         self.status['channel'] = (data[308] & 0x3c) >> 2
         self.status['volume']  =  data[310]
-        self.status['crc_ok']  = (self.crc16(data[:-2]) == struct.unpack('>H',data[-2:])[0])
+        self.status['crc_ok']  = (_crc16(data[:-2]) == struct.unpack('>H',data[-2:])[0])
 
         return self.status
 
@@ -253,20 +249,20 @@ class DeviMoteApp(App):
             self._powered(0)
         self.gui.update(self.status)
 
-    def report(self, status):
+    def report(self):
         '''Pretty-print current status'''
-        if not status['crc_ok']:
+        if not self.status['crc_ok']:
             print ('[CRC ERROR]')
             return
-        if status['connected']:
+        if self.status['connected']:
             print (
                 "[{}] {} ({}), volume: {}dB {} {}".format(
-                    "ON " if status['power'] else "OFF",
-                    status['dev_name'],
-                    status['ip'],
-                    (status['volume'] - 195) / 2.0,
-                    status['ch_list'][status['channel']],
-                    "[M]" if status['muted'] else ""
+                    "ON " if self.status['power'] else "OFF",
+                    self.status['dev_name'],
+                    self.status['ip'],
+                    (self.status['volume'] - 195) / 2.0,
+                    self.status['ch_list'][self.status['channel']],
+                    "[M]" if self.status['muted'] else ""
                 )
             )
 
