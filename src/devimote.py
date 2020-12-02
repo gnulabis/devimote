@@ -7,8 +7,6 @@ from kivy.properties import ObjectProperty
 from kivy.clock import Clock
 from kivy.uix.gridlayout import GridLayout
 from kivy.uix.boxlayout import BoxLayout
-from kivy.uix.carousel import Carousel
-from kivy.uix.button import Button
 
 class DeviMoteVolume(BoxLayout):
     vol_slider: ObjectProperty(None)
@@ -97,7 +95,7 @@ class DeviMoteBackEnd():
             self.packet_cnt += 1
             crc = self.crc16(data[0:12])
             data[12] = (crc & 0xff00) >> 8
-            data[13] = (crc & 0x00ff)                
+            data[13] = (crc & 0x00ff)
             sock.sendto(data, (self.status['ip'], self.UDP_PORT_CMD))
 
     def toggle_power(self):
@@ -137,13 +135,13 @@ class DeviMoteBackEnd():
         data[8] = (volume & 0xff00) >> 8
         data[9] = (volume & 0x00ff)
         self._send_command(data)
-    
+
     def set_output(self, output):
         out_val = 0x4000 | (output << 5)
         data = bytearray(142)
         data[6] = 0x00
         data[7] = 0x05
-        data[8] = (out_val & 0xff00) >> 8        
+        data[8] = (out_val & 0xff00) >> 8
         if output > 7:
             data[9] = (out_val & 0x00ff) >> 1
         else:
@@ -187,7 +185,7 @@ class DeviMoteApp(App):
             self.status['booting'] = True
             Clock.schedule_once(self._powered, 20)
         self.backend.toggle_power()
-        
+
     def toggle_mute_callback(self, instance):
         self.backend.toggle_mute()
 
