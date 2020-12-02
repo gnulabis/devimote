@@ -1,2 +1,2 @@
 # devimote
-Remote control for Devialet Expert written in Python
+Unofficial remote control for Devialet Expert amplifiers written in Python
