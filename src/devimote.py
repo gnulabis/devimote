@@ -1,3 +1,5 @@
+'''An unofficial remote control application for Devialet Expert amplifiers'''
+
 import socket
 import struct
 import math as m
@@ -9,12 +11,15 @@ from kivy.uix.gridlayout import GridLayout
 from kivy.uix.boxlayout import BoxLayout
 
 class DeviMoteVolume(BoxLayout):
+    '''Wrapper class around BoxLayout'''
     vol_slider: ObjectProperty(None)
 
     def set_byte (self, byte):
+        '''Function to adjust the volume slider'''
         self.vol_slider.value = byte
 
 class DeviMoteWidget(GridLayout):
+    '''Top-level widget'''
     channels  = ObjectProperty(None)
     volume    = ObjectProperty(None)
     stat_line = ObjectProperty(None)
@@ -22,13 +27,16 @@ class DeviMoteWidget(GridLayout):
     sw_mute   = ObjectProperty(None)
 
     def populate_channels(self, ch_list):
+        '''Function to populate once the list of channels'''
         for channel in ch_list:
             self.channels.values.append(ch_list[channel])
 
     def set_volume(self, byte):
+        '''Function to adjust the volume'''
         self.volume.set_byte(byte)
 
     def update(self, status):
+        '''Function to update all GUI elements based on current status'''
         if status and status['connected']:
             self.stat_line.text = 'Status: Connected'
             if status['power']:
@@ -52,11 +60,13 @@ class DeviMoteWidget(GridLayout):
             self.stat_line.text  = 'Status: Not connected'
 
 class DeviMoteBackEnd():
+    '''Backend class handling all control and status monitoring'''
     UDP_PORT_STATUS = 45454
     UDP_PORT_CMD    = 45455
     VOLUME_LIMIT    = -10
 
     def __init__(self):
+        '''Backend constructor with default initial values'''
         self.status = {}
         self.status['dev_name'] = 'Unknown'
         self.status['ip'] = None
@@ -70,6 +80,7 @@ class DeviMoteBackEnd():
         self.packet_cnt = 0
 
     def crc16(self, data : bytearray):
+        '''Function to calculate a CRC-16/CCITT-FALSE from the given bytearray'''
         if data is None :
             return 0
         crc = 0xFFFF
@@ -83,6 +94,7 @@ class DeviMoteBackEnd():
         return crc & 0xFFFF
 
     def _send_command(self, data: bytearray):
+        '''Internal function that builds and transmits a UDP packet command to the amplifier'''
         if not (self.status['connected'] and self.status['ip']):
             return
         sock = socket.socket(socket.AF_INET,    # Internet
@@ -99,23 +111,27 @@ class DeviMoteBackEnd():
             sock.sendto(data, (self.status['ip'], self.UDP_PORT_CMD))
 
     def toggle_power(self):
+        '''Function for toggling the power status'''
         data = bytearray(142)
         data[6] = int(not self.status['power'])
         data[7] = 0x01
         self._send_command(data)
 
     def toggle_mute(self):
+        '''Function for toggling the mute status'''
         data = bytearray(142)
         data[6] = int(not self.status['muted'])
         data[7] = 0x07
         self._send_command(data)
 
     def set_volume(self, dB_value):
+        '''Function for changing the volume'''
 
         if dB_value > self.VOLUME_LIMIT:
             dB_value = self.VOLUME_LIMIT
 
         def _dB_convert(dB_value):
+            '''Internal function to convert dB to a 16-bit representation used by set_volume'''
             dB_abs = m.fabs(dB_value)
             if dB_abs == 0:
                 return 0
@@ -137,6 +153,7 @@ class DeviMoteBackEnd():
         self._send_command(data)
 
     def set_output(self, output):
+        '''Function for changing the output'''
         out_val = 0x4000 | (output << 5)
         data = bytearray(142)
         data[6] = 0x00
@@ -149,6 +166,7 @@ class DeviMoteBackEnd():
         self._send_command(data)
 
     def update(self):
+        '''Try to get UDP status packet and decode it'''
         sock = socket.socket(socket.AF_INET,    # Internet
                              socket.SOCK_DGRAM) # UDP
         sock.bind(('', self.UDP_PORT_STATUS))
@@ -174,11 +192,14 @@ class DeviMoteBackEnd():
         return self.status
 
 class DeviMoteApp(App):
+    '''Top-level class combining the backend and the top-level widget'''
 
     def _powered(self, dt):
+        '''Internal function to use during booting'''
         self.status['booting'] = False
 
     def toggle_power_callback(self, instance):
+        '''Callback function for toggling power'''
         if self.status['booting']:
             return
         if not self.status['power']:
@@ -187,13 +208,16 @@ class DeviMoteApp(App):
         self.backend.toggle_power()
 
     def toggle_mute_callback(self, instance):
+        '''Callback function for toggling mute'''
         self.backend.toggle_mute()
 
     def set_volume_callback(self, instance, value):
+        '''Callback function for changing the volume'''
         if value != self.status['volume']:
             self.backend.set_volume((value-195.0) / 2)
 
     def set_output_callback(self, instance, text):
+        '''Callback function for changing the output'''
         for channel in self.status['ch_list']:
             if text == self.status['ch_list'][channel]:
                 output = channel
@@ -202,6 +226,7 @@ class DeviMoteApp(App):
             self.backend.set_output(output)
 
     def build(self):
+        '''Kivy build function, runs once'''
         self.gui = DeviMoteWidget()
         self.backend = DeviMoteBackEnd()
         self.status = self.backend.update()
@@ -215,12 +240,14 @@ class DeviMoteApp(App):
         return self.gui
 
     def update(self, dt):
+        '''Function to update both the backend and the GUI. Scheduled to run periodically'''
         self.status = self.backend.update()
         if self.status['power']:
             self._powered(0)
         self.gui.update(self.status)
 
     def report(self, status):
+        '''Pretty-print current status'''
         if not status['crc_ok']:
             print ('[CRC ERROR]')
             return
