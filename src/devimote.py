@@ -5,7 +5,7 @@ import struct
 import math as m
 
 from kivy.app import App
-from kivy.properties import ObjectProperty
+from kivy.properties import ObjectProperty # pylint: disable=no-name-in-module
 from kivy.clock import Clock
 from kivy.uix.gridlayout import GridLayout
 from kivy.uix.boxlayout import BoxLayout
@@ -51,7 +51,7 @@ class DeviMoteWidget(GridLayout):
                 self.sw_power.state = 'normal'
                 self.sw_power.text  = 'STANDBY'
                 self.sw_power.background_color = [1, 1, 1, 1]
-            self.sw_mute.state  = status['muted'] and 'down' or 'normal'
+            self.sw_mute.state  = 'down' if status['muted'] else 'normal'
             self.volume.set_byte(status['volume'])
             if not self.channels.values:
                 self.populate_channels(status['ch_list'])
@@ -84,9 +84,9 @@ class DeviMoteBackEnd():
         if data is None :
             return 0
         crc = 0xFFFF
-        for i in range(len(data)):
-            crc ^= data[i] << 8
-            for j in range(8):
+        for i in enumerate(data):
+            crc ^= data[i[0]] << 8
+            for _ in range(8):
                 if (crc & 0x8000) > 0:
                     crc =(crc << 1) ^ 0x1021
                 else:
@@ -101,7 +101,7 @@ class DeviMoteBackEnd():
                              socket.SOCK_DGRAM) # UDP
         data[0] = 0x44
         data[1] = 0x72
-        for i in range(4):
+        for _ in range(4):
             data[3] = self.packet_cnt
             data[5] = self.packet_cnt >> 1
             self.packet_cnt += 1
@@ -124,25 +124,26 @@ class DeviMoteBackEnd():
         data[7] = 0x07
         self._send_command(data)
 
-    def set_volume(self, dB_value):
+    def set_volume(self, db_value):
         '''Function for changing the volume'''
 
-        if dB_value > self.VOLUME_LIMIT:
-            dB_value = self.VOLUME_LIMIT
+        if db_value > self.VOLUME_LIMIT:
+            db_value = self.VOLUME_LIMIT
 
-        def _dB_convert(dB_value):
+        def _db_convert(db_value):
             '''Internal function to convert dB to a 16-bit representation used by set_volume'''
-            dB_abs = m.fabs(dB_value)
-            if dB_abs == 0:
-                return 0
-            elif dB_abs == 0.5:
-                return 0x3f00
+            db_abs = m.fabs(db_value)
+            if db_abs == 0:
+                retval = 0
+            elif db_abs == 0.5:
+                retval = 0x3f00
             else:
-                return (256 >> m.ceil(1 + m.log(dB_abs, 2))) + _dB_convert(dB_abs - 0.5)
+                retval = (256 >> m.ceil(1 + m.log(db_abs, 2))) + _db_convert(db_abs - 0.5)
+            return retval
 
-        volume = _dB_convert(dB_value)
+        volume = _db_convert(db_value)
 
-        if dB_value < 0:
+        if db_value < 0:
             volume |= 0x8000
 
         data = bytearray(142)
@@ -200,11 +201,11 @@ class DeviMoteApp(App):
         self.backend = None
         self.status = None
 
-    def _powered(self, dt):
+    def _powered(self, _dt):
         '''Internal function to use during booting'''
         self.status['booting'] = False
 
-    def toggle_power_callback(self, instance):
+    def toggle_power_callback(self, _instance):
         '''Callback function for toggling power'''
         if self.status['booting']:
             return
@@ -213,16 +214,16 @@ class DeviMoteApp(App):
             Clock.schedule_once(self._powered, 20)
         self.backend.toggle_power()
 
-    def toggle_mute_callback(self, instance):
+    def toggle_mute_callback(self, _instance):
         '''Callback function for toggling mute'''
         self.backend.toggle_mute()
 
-    def set_volume_callback(self, instance, value):
+    def set_volume_callback(self, _instance, value):
         '''Callback function for changing the volume'''
         if value != self.status['volume']:
             self.backend.set_volume((value-195.0) / 2)
 
-    def set_output_callback(self, instance, text):
+    def set_output_callback(self, _instance, text):
         '''Callback function for changing the output'''
         for channel in self.status['ch_list']:
             if text == self.status['ch_list'][channel]:
@@ -245,7 +246,7 @@ class DeviMoteApp(App):
         Clock.schedule_interval(self.update, 0.1)
         return self.gui
 
-    def update(self, dt):
+    def update(self, _dt):
         '''Function to update both the backend and the GUI. Scheduled to run periodically'''
         self.status = self.backend.update()
         if self.status['power']:
