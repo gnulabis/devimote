@@ -1,0 +1,45 @@
+#:kivy 1.10.0
+#:import colorsys colorsys
+
+<DeviMoteVolume>:
+    orientation: 'horizontal'
+    vol_slider: vol_slider_id
+    Slider:
+        id: vol_slider_id
+        min: 0
+        max: 255
+        step: 1
+        value_track: True
+        value_track_color: list(colorsys.hsv_to_rgb(1.5-(vol_slider_id.value)/512.0, 1, 1) + (1,))
+    Label:
+        text: '{:+.1f}dB'.format((vol_slider_id.value-195)/2.0)
+
+<DeviMoteWidget>:
+    rows:      3
+    cols:      1
+    padding:   20
+    spacing:   10
+    channels:  channels_id
+    volume:    volume_id
+    stat_line: stat_line_id
+    sw_power:  sw_power_id
+    sw_mute:   sw_mute_id
+    BoxLayout:
+        orientation: 'horizontal'
+        spacing: 100
+        Spinner:
+            id: channels_id
+        BoxLayout:
+            orientation: 'vertical'
+            spacing: 10
+            ToggleButton:
+                id: sw_power_id
+                font_size: 20
+            ToggleButton:
+                id: sw_mute_id
+                font_size: 20
+                text: self.state == 'down' and 'Unmute' or 'Mute'
+    DeviMoteVolume:
+        id: volume_id
+    Label:
+        id: stat_line_id
