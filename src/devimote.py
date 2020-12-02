@@ -193,6 +193,12 @@ class DeviMoteBackEnd():
 
 class DeviMoteApp(App):
     '''Top-level class combining the backend and the top-level widget'''
+    def __init__(self):
+        '''Constructor'''
+        super().__init__()
+        self.gui = None
+        self.backend = None
+        self.status = None
 
     def _powered(self, dt):
         '''Internal function to use during booting'''
