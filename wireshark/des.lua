@@ -1,3 +1,7 @@
+-- SPDX-FileCopyrightText: 2020 Dimitris Lampridis <dlampridis@gmail.com>
+--
+-- SPDX-License-Identifier: GPL-3.0-or-later
+
 des_protocol = Proto("DES",  "Devialet Expert Status")
 
 des_protocol.fields.magic_val   = ProtoField.string("des.magic",      "Magic Value")

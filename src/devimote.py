@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2020 Dimitris Lampridis <dlampridis@gmail.com>
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 '''An unofficial remote control application for Devialet Expert amplifiers'''
 
 import socket

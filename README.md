@@ -1,3 +1,9 @@
+<!--
+SPDX-FileCopyrightText: 2020 Dimitris Lampridis <dlampridis@gmail.com>
+
+SPDX-License-Identifier: CC0-1.0
+-->
+
 # DeviMote
 Unofficial remote control for Devialet Expert amplifiers written in Python
 
