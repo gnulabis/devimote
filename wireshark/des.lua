@@ -43,10 +43,6 @@ function des_protocol.dissector(buffer, pinfo, tree)
    for i = 0, 14, 1 do
       local out_val = string.format("%s [%s]", buffer(0x35+17*i, 16):string(), buffer(0x34+17*i, 1):uint() ~= 0x30 and "Enabled" or "Disabled")
       subtree:add(output_channel[i], buffer(0x34+17*i,17), out_val)
-      --local out_stat = 
-      --local out_name = 
-      --outputSubtree:add(output_stat[i], out_stat, out_stat:uint() ~= 0x30 and "Enabled" or "Disabled")
-      --outputSubtree:add(output_name[i], out_name)
    end
 
    local function disp_status(stat)

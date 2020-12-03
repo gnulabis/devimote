@@ -88,9 +88,6 @@ function dec_protocol.dissector(buffer, pinfo, tree)
    local crc16_calc = ccitt_16(buffer(0x0,12))
    local crc16_read = buffer(0xc,2):uint()
    subtree:add(dec_protocol.fields.crc16_check, buffer(0xc,2), crc16_calc == crc16_read and "Valid" or "Invalid")
-   -- local crc16_calc = ccitt_16(buffer(0xe,126))
-   -- local crc16_read = buffer(0x8c,2):uint()
-   -- subtree:add(dec_protocol.fields.crc16_data, buffer(0xe,126), crc16_calc == crc16_read and "Valid" or "Invalid")
 
    subtree:add(dec_protocol.fields.todo_field, buffer(0xe,128))
 
