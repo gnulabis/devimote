@@ -10,7 +10,7 @@ des_protocol.fields.dev_name    = ProtoField.string("des.dev_name",   "Device Na
 des_protocol.fields.dev_uptime  = ProtoField.string("des.dev_uptime", "Uptime")
 des_protocol.fields.crc16_check = ProtoField.string("des.crc_check",  "Checksum")
 des_protocol.fields.status      = ProtoField.string("des.status",     "Status")
-des_protocol.fields.volume      = ProtoField.string("des.status",     "Volume")
+des_protocol.fields.volume      = ProtoField.string("des.volume",     "Volume")
 
 des_protocol.fields.todo_field1 = ProtoField.none("des.todo1", "Unknown Field")
 des_protocol.fields.todo_field2 = ProtoField.none("des.todo2", "Unknown Field")
