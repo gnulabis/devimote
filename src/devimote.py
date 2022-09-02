@@ -260,14 +260,11 @@ class DeviMoteApp(App):
             return
         if self.status['connected']:
             print (
-                "[{}] {} ({}), volume: {}dB {} {}".format(
-                    "ON " if self.status['power'] else "OFF",
-                    self.status['dev_name'],
-                    self.status['ip'],
-                    (self.status['volume'] - 195) / 2.0,
-                    self.status['ch_list'][self.status['channel']],
-                    "[M]" if self.status['muted'] else ""
-                )
+                f"[{'ON ' if self.status['power'] else 'OFF'}]"
+                f" {self.status['dev_name']} ({self.status['ip']}),"
+                f" volume: {(self.status['volume'] - 195) / 2.0}dB"
+                f" {self.status['ch_list'][self.status['channel']]}"
+                f"{'[M]' if self.status['muted'] else ''}"
             )
 
 if __name__ == '__main__':
