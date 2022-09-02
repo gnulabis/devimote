@@ -170,6 +170,7 @@ class DeviMoteBackEnd():
         '''Try to get UDP status packet and decode it'''
         sock = socket.socket(socket.AF_INET,    # Internet
                              socket.SOCK_DGRAM) # UDP
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         sock.bind(('', self.UDP_PORT_STATUS))
         sock.settimeout(2)
         try:
