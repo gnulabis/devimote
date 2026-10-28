@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2020 Dimitris Lampridis <dlampridis@gmail.com>
+# SPDX-FileCopyrightText: 2020-2026 Dimitris Lampridis <dlampridis@gmail.com>
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -58,6 +58,10 @@ class DeviMoteBackEnd:
 
         The packet is framed with a ``0x44 0x72`` header and a CRC-16/CCITT-FALSE
         checksum over the first 12 bytes, then sent 4 times for reliability (UDP).
+
+        Bytes 2-3 carry a 16-bit big-endian packet counter and bytes 4-5 a 16-bit
+        command counter equal to ``packet_cnt >> 1`` (observed in captures of the
+        official app, where the counter ran well past 255 without wrapping).
         '''
         ip = self.status.get('ip') or self._configured_host
         if not ip:
@@ -67,9 +71,9 @@ class DeviMoteBackEnd:
         data[0] = 0x44
         data[1] = 0x72
         for _ in range(4):
-            data[3] = self.packet_cnt
-            data[5] = self.packet_cnt >> 1
-            self.packet_cnt = (self.packet_cnt + 1) % 256
+            data[2:4] = self.packet_cnt.to_bytes(2, 'big')
+            data[4:6] = (self.packet_cnt >> 1).to_bytes(2, 'big')
+            self.packet_cnt = (self.packet_cnt + 1) % 0x10000
             crc = _crc16(data[0:12])
             data[12] = (crc & 0xff00) >> 8
             data[13] = crc & 0x00ff

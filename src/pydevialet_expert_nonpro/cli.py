@@ -31,7 +31,7 @@ def _load_packet_cnt(ip: str) -> int:
         state = json.loads(_state_path().read_text())
     except (FileNotFoundError, json.JSONDecodeError):
         return 0
-    return state.get(ip, 0)
+    return int(state.get(ip, 0)) % 0x10000
 
 
 def _save_packet_cnt(ip: str, packet_cnt: int) -> None:
@@ -68,10 +68,10 @@ def _connect() -> DeviMoteBackEnd:
 def _session():
     '''Connect and persist the packet counter afterwards.
 
-    The amplifier tracks the command sequence counter across invocations; since each
-    CLI run creates a fresh backend, a command sent shortly after a previous run gets
-    the same counter values again and is treated as a stale duplicate (this is why
-    source selection could silently fail / leave the amp in a bad state).
+    Each CLI run creates a fresh backend, so without this the 16-bit packet counter
+    would restart at 0 on every invocation. Testing showed the amplifier accepts a
+    counter reset, so this is a safeguard that keeps the sequence continuous, just
+    in case.
     '''
     backend = _connect()
     try:

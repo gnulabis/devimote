@@ -1,5 +1,5 @@
 <!--
-SPDX-FileCopyrightText: 2020 Dimitris Lampridis <dlampridis@gmail.com>
+SPDX-FileCopyrightText: 2020-2026 Dimitris Lampridis <dlampridis@gmail.com>
 
 SPDX-License-Identifier: CC0-1.0
 -->
@@ -91,10 +91,11 @@ devialet source analog
 
 ### Session state
 
-Each `devialet` invocation is a fresh process, but the amplifier tracks a command
-sequence counter across commands. To keep that counter continuous between
-invocations (and avoid commands being silently ignored as stale duplicates), the CLI
-persists it to a small per-amplifier-IP JSON file:
+Each `devialet` invocation is a fresh process, but command packets carry a 16-bit
+sequence counter. In testing, the amplifier also accepted commands when the counter was
+reset to 0, so continuity does not appear to be required. As a safeguard, the CLI
+keeps the counter continuous between invocations by persisting it to a small
+per-amplifier-IP JSON file:
 
 - **macOS**: `~/Library/Application Support/pydevialet-expert-nonpro/state.json`
 - **Linux**: `$XDG_CONFIG_HOME/pydevialet-expert-nonpro/state.json` (defaults to
