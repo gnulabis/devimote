@@ -1,5 +1,5 @@
 ..
-   SPDX-FileCopyrightText: 2020 Dimitris Lampridis <dlampridis@gmail.com>
+   SPDX-FileCopyrightText: 2020-2026 Dimitris Lampridis <dlampridis@gmail.com>
    SPDX-License-Identifier: CC0-1.0
 
 =========
@@ -16,6 +16,12 @@ Added
   application can reuse. Public API: ``DeviMoteBackEnd`` (alias ``DevialetExpertNonPro``).
 - Unit tests covering the CRC-16/CCITT-FALSE checksum (incl. the canonical ``0x29B1`` check
   value), the dB volume encoding, and status-packet decoding — no amplifier required.
+
+Fixed
+-----
+- The command packet counter is now 16 bits wide (bytes 2-3, with ``counter >> 1`` in bytes
+  4-5), as seen in captures of the official app, and wraps at 65536. Previously only the
+  low byte was written and the counter wrapped at 256.
 
 Changed
 -------
