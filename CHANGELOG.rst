@@ -19,12 +19,16 @@ Added
 
 Fixed
 -----
+- Source selection now sends the channel index as a big-endian float32, as the official app
+  does. The previous encoding was wrong for the lowest channel indexes.
 - The command packet counter is now 16 bits wide (bytes 2-3, with ``counter >> 1`` in bytes
   4-5), as seen in captures of the official app, and wraps at 65536. Previously only the
   low byte was written and the counter wrapped at 256.
 
 Changed
 -------
+- The volume command value is encoded with ``struct.pack`` as a big-endian float32,
+  replacing the hand-rolled conversion.
 - Replaced the hand-rolled CRC-16/CCITT-FALSE with ``binascii.crc_hqx`` from the standard
   library (verified equivalent via the test vectors above).
 - The Kivy GUI now lives in ``gui/devimote.py`` and imports the backend from the library

@@ -10,7 +10,6 @@ documentation; it was reverse-engineered via Wireshark.
 '''
 
 import binascii
-import math as m
 import socket
 import struct
 from typing import Optional
@@ -93,51 +92,25 @@ class DeviMoteBackEnd:
         data[7] = 0x07
         self._send_command(data)
 
+    def _send_value(self, opcode: int, value: float) -> None:
+        '''Send command ``opcode`` with ``value`` as a big-endian float32 in bytes 8-11.'''
+        data = bytearray(142)
+        data[7] = opcode
+        data[8:12] = struct.pack('>f', value)
+        self._send_command(data)
+
     def set_volume(self, db_value: float) -> None:
         '''Set the volume to ``db_value`` dB.
 
-        Values above ``VOLUME_LIMIT`` are clamped. The hardware resolution is 0.5 dB;
-        the value is rounded to the nearest half-step because ``_db_convert`` only
-        terminates on multiples of 0.5.
+        Values above ``VOLUME_LIMIT`` are clamped. The value is rounded to the nearest
+        0.5 dB, which is the hardware resolution.
         '''
         db_value = min(db_value, self.VOLUME_LIMIT)
-        db_value = round(db_value * 2) / 2
-
-        def _db_convert(db_value: float) -> int:
-            '''Convert a dB magnitude to the 16-bit representation used on the wire.'''
-            db_abs = m.fabs(db_value)
-            if db_abs == 0:
-                retval = 0
-            elif db_abs == 0.5:
-                retval = 0x3f00
-            else:
-                retval = (256 >> m.ceil(1 + m.log(db_abs, 2))) + _db_convert(db_abs - 0.5)
-            return retval
-
-        volume = _db_convert(db_value)
-
-        if db_value < 0:
-            volume |= 0x8000
-
-        data = bytearray(142)
-        data[6] = 0x00
-        data[7] = 0x04
-        data[8] = (volume & 0xff00) >> 8
-        data[9] = volume & 0x00ff
-        self._send_command(data)
+        self._send_value(0x04, round(db_value * 2) / 2)
 
     def set_output(self, output: int) -> None:
         '''Select the input source by channel index ``output``.'''
-        out_val = 0x4000 | (output << 5)
-        data = bytearray(142)
-        data[6] = 0x00
-        data[7] = 0x05
-        data[8] = (out_val & 0xff00) >> 8
-        if output > 7:
-            data[9] = (out_val & 0x00ff) >> 1
-        else:
-            data[9] = out_val & 0x00ff
-        self._send_command(data)
+        self._send_value(0x05, output)
 
     def update(self) -> dict:
         '''Receive one status broadcast (2 s timeout) and decode it into ``self.status``.
